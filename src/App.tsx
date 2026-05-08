@@ -139,10 +139,10 @@ const CustomAxisTick = ({ x, y, payload }: any) => {
   const data = monthlyData.find(d => d.name === payload.value);
   return (
     <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={10} textAnchor="middle" fill="#A5A5A5" fontSize={10}>
+      <text x={0} y={0} dy={12} textAnchor="middle" fill="#A5A5A5" fontSize={12}>
         {payload.value}
       </text>
-      <text x={0} y={0} dy={22} textAnchor="middle" fill="#C5C5C5" fontSize={8.5}>
+      <text x={0} y={0} dy={26} textAnchor="middle" fill="#C5C5C5" fontSize={10}>
         {data?.xAxisPeriod}
       </text>
     </g>
@@ -189,11 +189,11 @@ const EvolutionChart = ({ title, dataKey, color, delay = 0, prefix = '', suffix 
       className="relative flex flex-col p-6 bg-[#FFFFFF] border border-[#EAEAEA] rounded-[8px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 cursor-default"
     >
       <div className="flex items-center justify-between min-h-[24px] mb-8">
-        <h3 className="text-[11px] font-medium text-[#787774] tracking-[0.05em] uppercase leading-snug">{title}</h3>
+        <h3 className="text-[13px] font-medium text-[#787774] tracking-[0.05em] uppercase leading-snug">{title}</h3>
       </div>
-      <div className="h-44 w-full mt-auto">
+      <div className="h-72 w-full mt-auto">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: -20, bottom: 15 }}>
+          <LineChart data={monthlyData} margin={{ top: 10, right: 20, left: 10, bottom: 25 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F5F5F5" />
             <XAxis 
               dataKey="name" 
@@ -201,11 +201,12 @@ const EvolutionChart = ({ title, dataKey, color, delay = 0, prefix = '', suffix 
               tickLine={false} 
               tick={<CustomAxisTick />} 
               interval={0}
+              padding={{ left: 30, right: 30 }}
             />
             <YAxis 
               axisLine={false} 
               tickLine={false} 
-              tick={{ fontSize: 10, fill: '#A5A5A5' }} 
+              tick={{ fontSize: 12, fill: '#A5A5A5' }} 
               tickFormatter={formatter}
               domain={['auto', 'auto']}
             />
@@ -277,33 +278,6 @@ export default function App() {
               delay={0.4}
             />
           </div>
-        </section>
-
-        {/* Historical Evolution */}
-        <section className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-[-1.5rem]">
-             <EvolutionChart title="Evolução de Investimento" dataKey="Investimento" color="#A5A5A5" delay={0.2} prefix="R$ " />
-             <EvolutionChart title="Evolução de Receita" dataKey="Receita" color="#111111" delay={0.3} prefix="R$ " />
-             <EvolutionChart title="Evolução de ROAS" dataKey="ROAS" color="#346538" suffix="x" delay={0.4} />
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, x: -50, filter: 'blur(10px)' }}
-            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-start gap-4 p-6 md:p-8 bg-[#FFFFFF] border border-[#EAEAEA] rounded-[8px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 cursor-default"
-          >
-             <div className="mt-1 text-[#111111]">
-               <Lightbulb size={24} weight="regular" />
-             </div>
-             <div className="flex flex-col gap-3">
-               <h3 className="text-[17px] md:text-lg font-medium text-[#111111]">Aceleração do Ciclo de Maturidade</h3>
-               <p className="text-[16px] md:text-[17px] text-[#787774] leading-[1.6]">
-                 A proporção entre investimento e resultado alcançou seu pico de eficiência absoluta. Apenas nos primeiros 8 dias de maio, operamos sob um ROAS recorde de <strong className="text-[#111111] font-medium">43.37x</strong>. A receita gerada já bate de frente e supera a volumetria de meses completos anteriores em uma fração do tempo, consumindo quase 4x menos caixa. Maior escalabilidade e velocidade de absorção de receita com a melhor segurança financeira do projeto até aqui.
-               </p>
-             </div>
-          </motion.div>
         </section>
 
         {/* Funnel Efficiency */}
@@ -426,6 +400,34 @@ export default function App() {
                    </motion.div>
                ))}
            </div>
+        </section>
+
+        {/* Historical Evolution */}
+        <section className="flex flex-col gap-6 pt-10 border-t border-[#EAEAEA] mt-4">
+          <SectionTitle icon={TrendUp} title="Evolução Temporal" delay={0.1} />
+          <div className="flex flex-col gap-6">
+             <EvolutionChart title="Evolução de Investimento" dataKey="Investimento" color="#A5A5A5" delay={0.1} prefix="R$ " />
+             <EvolutionChart title="Evolução de Receita" dataKey="Receita" color="#111111" delay={0.2} prefix="R$ " />
+             <EvolutionChart title="Evolução de ROAS" dataKey="ROAS" color="#346538" suffix="x" delay={0.3} />
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -50, filter: 'blur(10px)' }}
+            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="flex items-start gap-4 p-6 md:p-8 bg-[#FFFFFF] border border-[#EAEAEA] rounded-[8px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 cursor-default mt-4"
+          >
+             <div className="mt-1 text-[#111111]">
+               <Lightbulb size={24} weight="regular" />
+             </div>
+             <div className="flex flex-col gap-3">
+               <h3 className="text-[17px] md:text-lg font-medium text-[#111111]">Aceleração do Ciclo de Maturidade</h3>
+               <p className="text-[16px] md:text-[17px] text-[#787774] leading-[1.6]">
+                 A proporção entre investimento e resultado alcançou seu pico de eficiência absoluta. Apenas nos primeiros 8 dias de maio, operamos sob um ROAS recorde de <strong className="text-[#111111] font-medium">43.37x</strong>. A receita gerada já bate de frente e supera a volumetria de meses completos anteriores em uma fração do tempo, consumindo quase 4x menos caixa. Maior escalabilidade e velocidade de absorção de receita com a melhor segurança financeira do projeto até aqui.
+               </p>
+             </div>
+          </motion.div>
         </section>
 
       </main>

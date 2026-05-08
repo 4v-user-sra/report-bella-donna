@@ -1,5 +1,14 @@
 import { cn } from './lib/utils';
-import { motion } from 'motion/react';
+import { motion, useMotionValue, useTransform, animate } from 'motion/react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
 import {
   CurrencyDollar,
   TrendUp,
@@ -104,6 +113,119 @@ const SectionTitle = ({ icon: Icon, title, delay = 0 }: { icon: React.ElementTyp
   </motion.div>
 );
 
+const AnimatedCounter = ({ value, prefix = "", suffix = "" }: { value: number, prefix?: string, suffix?: string }) => {
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (latest) => {
+    return prefix + latest.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + suffix;
+  });
+
+  useEffect(() => {
+    const controls = animate(count, value, { duration: 1.5, ease: "easeOut" });
+    return controls.stop;
+  }, [count, value]);
+
+  return <motion.span>{rounded}</motion.span>;
+};
+
+const monthlyData = [
+  { name: 'Jan 26', xAxisPeriod: '1-31', period: '01 a 31 de janeiro', Investimento: 1169.75, Receita: 25872.40, ROAS: 22.12 },
+  { name: 'Fev 26', xAxisPeriod: '1-28', period: '01 a 28 de fevereiro', Investimento: 645.36, Receita: 8894.00, ROAS: 13.78 },
+  { name: 'Mar 26', xAxisPeriod: '1-31', period: '01 a 31 de março', Investimento: 1538.37, Receita: 36879.70, ROAS: 23.97 },
+  { name: 'Abr 26', xAxisPeriod: '1-30', period: '01 a 30 de abril', Investimento: 1818.45, Receita: 55451.50, ROAS: 30.49 },
+  { name: 'Mai 26', xAxisPeriod: '1-8', period: '01 a 08 de maio', Investimento: 448.41, Receita: 19449.60, ROAS: 43.37 },
+];
+
+const CustomAxisTick = ({ x, y, payload }: any) => {
+  const data = monthlyData.find(d => d.name === payload.value);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={10} textAnchor="middle" fill="#A5A5A5" fontSize={10}>
+        {payload.value}
+      </text>
+      <text x={0} y={0} dy={22} textAnchor="middle" fill="#C5C5C5" fontSize={8.5}>
+        {data?.xAxisPeriod}
+      </text>
+    </g>
+  );
+};
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white border border-[#EAEAEA] p-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] rounded-[6px]">
+        <p className="text-[10px] font-medium text-[#787774] tracking-wide uppercase mb-2">{data.period}</p>
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+               <span className="text-[12px] text-[#787774]">{entry.name}</span>
+            </div>
+            <span className="text-[12px] font-medium text-[#111111]">
+               {entry.name === 'ROAS' 
+                 ? `${entry.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}x` 
+                 : `R$ ${entry.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+const EvolutionChart = ({ title, dataKey, color, delay = 0, prefix = '', suffix = '' }: any) => {
+  const formatter = (value: number) => {
+    if (value >= 1000) return `${prefix}${(value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k${suffix}`;
+    return `${prefix}${value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}${suffix}`;
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
+      className="relative flex flex-col p-6 bg-[#FFFFFF] border border-[#EAEAEA] rounded-[8px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 cursor-default"
+    >
+      <div className="flex items-center justify-between min-h-[24px] mb-8">
+        <h3 className="text-[11px] font-medium text-[#787774] tracking-[0.05em] uppercase leading-snug">{title}</h3>
+      </div>
+      <div className="h-44 w-full mt-auto">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={monthlyData} margin={{ top: 5, right: 10, left: -20, bottom: 15 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F5F5F5" />
+            <XAxis 
+              dataKey="name" 
+              axisLine={false} 
+              tickLine={false} 
+              tick={<CustomAxisTick />} 
+              interval={0}
+            />
+            <YAxis 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fontSize: 10, fill: '#A5A5A5' }} 
+              tickFormatter={formatter}
+              domain={['auto', 'auto']}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#EAEAEA', strokeWidth: 1, strokeDasharray: '3 3' }} />
+            <Line 
+              type="monotone" 
+              dataKey={dataKey} 
+              stroke={color} 
+              strokeWidth={2} 
+              dot={{ r: 3, fill: '#FFFFFF', stroke: color, strokeWidth: 1.5 }} 
+              activeDot={{ r: 4, fill: color, strokeWidth: 0 }} 
+              animationDuration={1500}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </motion.div>
+  );
+};
+
 export default function App() {
   useEffect(() => {
     document.body.style.overflowX = 'hidden';
@@ -131,73 +253,97 @@ export default function App() {
         {/* Executive Summary Row (Bottom Line) */}
         <section>
           <SectionTitle icon={TrendUp} title="Indicadores Financeiros Chave" delay={0.1} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <MetricCard
-              title="Receita Gerada"
-              value="R$ 19.449,60"
-              icon={CurrencyDollar}
-              accent="green"
-              isPrimary={true}
-              subtext="Retorno sobre investimento publicitário"
-              subtextHighlight="ROAS 43.38x"
+              title="Investimento"
+              value={<AnimatedCounter value={448.38} prefix="R$ " />}
+              icon={ChartLineUp}
+              accent="neutral"
               delay={0.2}
             />
             <MetricCard
-              title="Investimento Mensurável"
-              value="R$ 448,38"
-              icon={ChartLineUp}
+              title="Receita Gerada"
+              value={<AnimatedCounter value={19449.60} prefix="R$ " />}
+              icon={CurrencyDollar}
               accent="neutral"
-              subtext="Verba consumida direta"
               delay={0.3}
             />
             <MetricCard
-              title="Custo por Compra (CPA)"
-              value="R$ 2,99"
-              icon={Target}
+              title="ROAS Geral"
+              value="43.38x"
+              icon={TrendUp}
               accent="green"
-              subtext="Dentro da margem de eficiência"
+              subtext="Retorno sobre investimento publicitário"
               delay={0.4}
             />
           </div>
         </section>
 
+        {/* Historical Evolution */}
+        <section className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-[-1.5rem]">
+             <EvolutionChart title="Evolução de Investimento" dataKey="Investimento" color="#A5A5A5" delay={0.2} prefix="R$ " />
+             <EvolutionChart title="Evolução de Receita" dataKey="Receita" color="#111111" delay={0.3} prefix="R$ " />
+             <EvolutionChart title="Evolução de ROAS" dataKey="ROAS" color="#346538" suffix="x" delay={0.4} />
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -50, filter: 'blur(10px)' }}
+            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="flex items-start gap-4 p-6 md:p-8 bg-[#FFFFFF] border border-[#EAEAEA] rounded-[8px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 cursor-default"
+          >
+             <div className="mt-1 text-[#111111]">
+               <Lightbulb size={24} weight="regular" />
+             </div>
+             <div className="flex flex-col gap-3">
+               <h3 className="text-[17px] md:text-lg font-medium text-[#111111]">Aceleração do Ciclo de Maturidade</h3>
+               <p className="text-[16px] md:text-[17px] text-[#787774] leading-[1.6]">
+                 A proporção entre investimento e resultado alcançou seu pico de eficiência absoluta. Apenas nos primeiros 8 dias de maio, operamos sob um ROAS recorde de <strong className="text-[#111111] font-medium">43.37x</strong>. A receita gerada já bate de frente e supera a volumetria de meses completos anteriores em uma fração do tempo, consumindo quase 4x menos caixa. Maior escalabilidade e velocidade de absorção de receita com a melhor segurança financeira do projeto até aqui.
+               </p>
+             </div>
+          </motion.div>
+        </section>
+
         {/* Funnel Efficiency */}
         <section>
-           <SectionTitle icon={Funnel} title="Conversão e Volumetria" delay={0.1} />
+           <SectionTitle icon={Funnel} title="Conversão e Volumetria (Funil)" delay={0.1} />
            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               <MetricCard
-                title="Total de Compras"
-                value="150"
-                icon={ShoppingCart}
-                accent="blue"
-                subtextHighlight="R$ 129,66"
-                subtext="Ticket Médio"
-                delay={0.2}
-              />
-              <MetricCard
-                title="Adições ao Carrinho"
-                value="277"
-                icon={ShoppingCart}
+                title="Cliques (Todos)"
+                value="662"
+                icon={CursorClick}
                 accent="neutral"
-                subtext="~61% de conversão do site"
-                delay={0.3}
+                subtextHighlight="100%"
+                subtext="Entrada do funil"
+                delay={0.2}
               />
               <MetricCard
                 title="Visualizações da Página"
                 value="451"
                 icon={Eye}
-                accent="neutral"
-                subtextHighlight="662"
-                subtext="Cliques totais originados"
+                accent="blue"
+                subtextHighlight="68.1%"
+                subtext="Retenção de cliques"
+                delay={0.3}
+              />
+              <MetricCard
+                title="Adições ao Carrinho"
+                value="277"
+                icon={ShoppingCart}
+                accent="yellow"
+                subtextHighlight="61.4%"
+                subtext="Conv. de visualizações"
                 delay={0.4}
               />
               <MetricCard
-                title="Cliques no Link"
-                value="429"
-                icon={CursorClick}
-                accent="blue"
-                subtextHighlight="0.57%"
-                subtext="CTR (Link) nos anúncios"
+                title="Total de Compras"
+                value="150"
+                icon={CurrencyDollar}
+                accent="green"
+                subtextHighlight="54.1%"
+                subtext="Conv. de carrinhos"
                 delay={0.5}
               />
            </div>
@@ -224,15 +370,15 @@ export default function App() {
                 delay={0.3}
               />
               <MetricCard
-                title="Custo por Mil (CPM)"
-                value="R$ 5,97"
-                icon={CurrencyDollar}
+                title="Custo por Compra (CPA)"
+                value={<AnimatedCounter value={2.99} prefix="R$ " />}
+                icon={Target}
                 accent="neutral"
                 delay={0.4}
               />
               <MetricCard
                 title="Custo por Clique (CPC)"
-                value="R$ 0,68"
+                value={<AnimatedCounter value={0.68} prefix="R$ " />}
                 icon={CurrencyDollar}
                 accent="neutral"
                 delay={0.5}
